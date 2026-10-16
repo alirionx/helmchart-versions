@@ -20,6 +20,7 @@ Kleine Web-App, die die aktuelle Version von Helm Charts aus HTTP-Repos und OCI-
 - `README.md` – Doku für Nutzer (Englisch)
 - `scripts/build-sea.mjs` – bündelt `server.js` mit esbuild zu `dist/server.mjs` (ESM, `require`-Shim im Banner), bettet `public/*` als SEA-Assets ein, baut mit `node --build-sea`
 - `.github/workflows/release.yml` – bei Tag `v*`: Version gegen `package.json` prüfen, bauen, Smoke-Test, Release mit `helm-versions-linux-x64.tar.gz` + `.sha256` (Name ohne Version, damit `releases/latest/download/…` funktioniert); manuell gestartet nur Build + Artifact
+- `.github/workflows/docker.yml` – bei Tag `v*`: Version prüfen, Image laden und Smoke-Test (leere Liste, `--version`), dann nur linux/amd64 nach `ghcr.io/alirionx/helmchart-versions:<version>` und `:latest` pushen; manuell gestartet nur Build + Test, kein Push
 - Im SEA-Modus (`isSea()`) liefert `server.js` das Frontend aus den Assets statt per `express.static`; Standard für die Chart-Liste ist dann `./sources.json` im Arbeitsverzeichnis
 
 ## Befehle

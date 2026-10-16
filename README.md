@@ -67,19 +67,22 @@ To build it yourself on Linux x64 with Node.js 26: `npm ci && npm run build:sea`
 
 ## Docker
 
-Build the image:
-
-```sh
-docker build -t helm-versions .
-```
-
-Run it:
+Ready-made images for `linux/amd64` are published to the GitHub Container Registry with every release:
 
 ```sh
 docker run -d --name helm-versions \
   -p 3000:3000 \
   -v helm-versions-data:/data \
-  helm-versions
+  ghcr.io/alirionx/helmchart-versions:latest
+```
+
+Use a version tag such as `ghcr.io/alirionx/helmchart-versions:0.1.0` to stay on a fixed release.
+
+To build the image yourself instead:
+
+```sh
+docker build -t helm-versions .
+docker run -d --name helm-versions -p 3000:3000 -v helm-versions-data:/data helm-versions
 ```
 
 Open <http://localhost:3000>.
@@ -177,7 +180,8 @@ public/style.css    styles (plain CSS, light and dark theme)
 public/app.js       UI state and API calls
 sources.json        your chart list (created on first start, not in git)
 scripts/build-sea.mjs  builds the single executable (esbuild + Node SEA)
-.github/workflows/release.yml  release pipeline
+.github/workflows/release.yml  release: single executable
+.github/workflows/docker.yml   release: Docker image
 Dockerfile
 ```
 
@@ -185,6 +189,8 @@ Dockerfile
 
 1. Set the new version in `package.json` (e.g. `1.1.0`).
 2. Commit, then tag and push: `git tag v1.1.0 && git push origin v1.1.0`
-3. The *Release* workflow builds and tests the executable and publishes a GitHub release with `helm-versions-linux-x64.tar.gz` and its checksum. It fails if the tag does not match the version in `package.json`.
+3. Two workflows start on the tag. Both fail if the tag does not match the version in `package.json`:
+   - *Release* builds and tests the executable and publishes a GitHub release with `helm-versions-linux-x64.tar.gz` and its checksum.
+   - *Docker* builds the image for amd64, tests it and pushes `ghcr.io/alirionx/helmchart-versions:<version>` and `:latest`.
 
-The workflow can also be started by hand (*Actions → Release → Run workflow*). It then only builds and tests and attaches the file to the workflow run.
+Both workflows can also be started by hand (*Actions → Release/Docker → Run workflow*). They then only build and test: *Release* attaches the file to the workflow run, *Docker* pushes nothing.

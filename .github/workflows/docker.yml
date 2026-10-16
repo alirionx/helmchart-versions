@@ -1,0 +1,80 @@
+# Builds the Docker image for linux/amd64.
+# Tag push (v1.2.3): build, test and push ghcr.io/alirionx/helmchart-versions:1.2.3 and :latest.
+# Manual run: build and test only, nothing is pushed.
+name: Docker
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE: ghcr.io/${{ github.repository }}
+
+jobs:
+  image:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Tag matches package.json version
+        if: github.ref_type == 'tag'
+        run: |
+          version="v$(jq -r .version package.json)"
+          if [ "$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match package.json version $version"
+            exit 1
+          fi
+
+      - uses: docker/setup-buildx-action@v4
+
+      # Tags: v1.2.3 -> 1.2.3 and latest; OCI labels link the package to this repo
+      - id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=raw,value=latest,enable=${{ github.ref_type == 'tag' }}
+
+      # Load the image locally first, so it can be tested before anything is pushed
+      - name: Build for test
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          load: true
+          tags: helmchart-versions:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Smoke test
+        run: |
+          docker run -d --name smoke -p 3999:3000 helmchart-versions:test
+          for i in $(seq 1 30); do curl -sf http://localhost:3999/ > /dev/null && break; sleep 1; done
+          curl -sf http://localhost:3999/ | grep -q 'Helm Chart Versions'
+          curl -sf http://localhost:3999/api/charts | grep -q '"charts":\[\]'
+          test "$(docker exec smoke node server.js --version)" = "$(jq -r .version package.json)"
+          docker rm -f smoke
+
+      - name: Log in to ghcr.io
+        if: github.ref_type == 'tag'
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        if: github.ref_type == 'tag'
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
