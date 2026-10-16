@@ -1,0 +1,19 @@
+{
+  "name": "helm-versions",
+  "version": "1.0.0",
+  "description": "Shows the latest versions of Helm charts from HTTP and OCI sources",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "js-yaml": "^4.1.0",
+    "semver": "^7.6.0"
+  }
+}

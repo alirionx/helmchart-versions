@@ -1,0 +1,20 @@
+# Dependencies
+node_modules/
+
+# Logs
+npm-debug.log*
+*.log
+
+# Environment variables / credentials
+.env
+.env.*
+
+# Editor & OS
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+
+# Temp file while saving sources.json
+sources.json.tmp
