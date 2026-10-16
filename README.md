@@ -20,25 +20,25 @@ It does nothing more than that, on purpose. There is no database and no login: o
 ## Quick start
 
 ```sh
-git clone <repo-url> helm-versions
-cd helm-versions
+git clone https://github.com/alirionx/helmchart-versions.git
+cd helmchart-versions
 npm install
 npm start
 ```
 
 Open <http://localhost:3000>.
 
-The repo comes with a few example charts in `sources.json`. Delete them in the UI or edit the file before you start.
+The app starts with an empty list. Add your charts with **Add chart**. They are saved to `sources.json` in the repo directory, which git ignores.
 
 For development, `npm run dev` restarts the server when `server.js` changes.
 
 ## Single executable (Linux x64)
 
-Every [release](../../releases) has a self-contained executable for Linux x64. Node.js is not needed. This is handy if you only want to keep an eye on your own set of charts, e.g. the apps you are responsible for.
+Every [release](https://github.com/alirionx/helmchart-versions/releases) has a self-contained executable for Linux x64. Node.js is not needed. This is handy if you only want to keep an eye on your own set of charts, e.g. the apps you are responsible for.
 
 ```sh
-curl -LO https://github.com/<owner>/<repo>/releases/latest/download/helm-versions-linux-x64.tar.gz
-curl -LO https://github.com/<owner>/<repo>/releases/latest/download/helm-versions-linux-x64.tar.gz.sha256
+curl -LO https://github.com/alirionx/helmchart-versions/releases/latest/download/helm-versions-linux-x64.tar.gz
+curl -LO https://github.com/alirionx/helmchart-versions/releases/latest/download/helm-versions-linux-x64.tar.gz.sha256
 sha256sum -c helm-versions-linux-x64.tar.gz.sha256
 tar -xzf helm-versions-linux-x64.tar.gz
 ./helm-versions
@@ -46,7 +46,7 @@ tar -xzf helm-versions-linux-x64.tar.gz
 
 Open <http://localhost:3000>.
 
-The chart list is saved as `sources.json` in the **current directory**. On the first start it is created from the example list built into the executable. Use `--sources` to keep several lists side by side:
+The chart list is saved as `sources.json` in the **current directory**. On the first start it is created as an empty list. Use `--sources` to keep several lists side by side:
 
 ```sh
 ./helm-versions --sources ~/charts/team-payments.json --port 8080
@@ -84,7 +84,7 @@ docker run -d --name helm-versions \
 
 Open <http://localhost:3000>.
 
-Inside the container the chart list is stored in `/data/sources.json`. On the first start, when that file does not exist yet, the app copies the example list from the image into it. Keep `/data` on a volume, as above, or the charts you add in the UI are lost when the container is removed.
+Inside the container the chart list is stored in `/data/sources.json`. On the first start it is created as an empty list. Keep `/data` on a volume, as above, or the charts you add in the UI are lost when the container is removed.
 
 To keep the file in a host directory instead of a named volume, the directory must be writable for UID 1000, the `node` user the container runs as:
 
@@ -106,7 +106,7 @@ Default for the chart list: `sources.json` in the repo when started with `npm st
 
 Options win over environment variables. With npm, pass them after `--`, e.g. `npm start -- --port 8080`.
 
-If the chart list file does not exist, the app starts with the bundled `sources.json` and creates the file.
+If the chart list file does not exist, the app starts with an empty list and creates the file, including missing directories.
 
 ## Managing charts
 
@@ -175,7 +175,7 @@ server.js           API, version checks and static file serving (Express)
 public/index.html   the UI markup (Alpine.js)
 public/style.css    styles (plain CSS, light and dark theme)
 public/app.js       UI state and API calls
-sources.json        the chart list (and the example list built into Docker image and executable)
+sources.json        your chart list (created on first start, not in git)
 scripts/build-sea.mjs  builds the single executable (esbuild + Node SEA)
 .github/workflows/release.yml  release pipeline
 Dockerfile

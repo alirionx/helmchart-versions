@@ -2,9 +2,9 @@ import express from 'express';
 import yaml from 'js-yaml';
 import semver from 'semver';
 import { randomUUID } from 'crypto';
-import { readFile, writeFile, rename } from 'fs/promises';
+import { readFile, writeFile, rename, mkdir } from 'fs/promises';
 import { fileURLToPath } from 'url';
-import { resolve } from 'path';
+import { resolve, dirname } from 'path';
 import { parseArgs } from 'util';
 import { isSea, getAsset, getAssetKeys } from 'node:sea';
 import pkg from './package.json' with { type: 'json' };
@@ -19,6 +19,7 @@ Options:
   -s, --sources <file>  chart list to read and save (env SOURCES_FILE)
                         default: ./sources.json in the current directory
                         (when run from the repo: the repo's sources.json)
+                        created as an empty list if it does not exist
   -h, --help            show this help
   -v, --version         show the version
 `;
@@ -52,9 +53,9 @@ const SEA = isSea();
 const PORT = args.port || process.env.PORT || 3000;
 const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 const TIMEOUT_MS = 15_000;
-const BUNDLED_SOURCES = SEA ? null : fileURLToPath(new URL('./sources.json', import.meta.url));
-// The list can live outside the app directory (e.g. a Docker volume); the executable defaults to the current directory
-const SOURCES_FILE = resolve(args.sources || process.env.SOURCES_FILE || BUNDLED_SOURCES || 'sources.json');
+// Default: next to server.js; the executable has no app directory and uses the current directory
+const DEFAULT_SOURCES = SEA ? 'sources.json' : fileURLToPath(new URL('./sources.json', import.meta.url));
+const SOURCES_FILE = resolve(args.sources || process.env.SOURCES_FILE || DEFAULT_SOURCES);
 
 // ---------- Helpers ----------
 
@@ -155,14 +156,19 @@ async function fromOci(ref) {
 // ---------- Sources (sources.json) ----------
 
 let sources;
-let seeded = false;
+let created = false;
 try {
   sources = JSON.parse(await readFile(SOURCES_FILE, 'utf-8'));
 } catch (err) {
-  // A configured file that does not exist yet starts with the bundled list
-  if (err.code !== 'ENOENT' || SOURCES_FILE === BUNDLED_SOURCES) throw err;
-  sources = JSON.parse(SEA ? getAsset('sources.json', 'utf-8') : await readFile(BUNDLED_SOURCES, 'utf-8'));
-  seeded = true;
+  // No list yet: start empty and create the file (and its directory)
+  if (err.code !== 'ENOENT') throw err;
+  sources = [];
+  await mkdir(dirname(SOURCES_FILE), { recursive: true });
+  created = true;
+}
+if (!Array.isArray(sources)) {
+  console.error(`${SOURCES_FILE} must contain a JSON array`);
+  process.exit(1);
 }
 let writing = Promise.resolve();
 
@@ -180,7 +186,7 @@ function saveSources() {
 }
 
 // Older files have no ids yet
-if (seeded || sources.some((s) => !s.id)) {
+if (created || sources.some((s) => !s.id)) {
   sources = sources.map((s) => ({ id: s.id || randomUUID(), ...s }));
   await saveSources();
 }

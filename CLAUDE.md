@@ -15,10 +15,10 @@ Kleine Web-App, die die aktuelle Version von Helm Charts aus HTTP-Repos und OCI-
 - `public/index.html` – Markup (Tabelle, Dialoge für Anlegen/Bearbeiten/Löschen und Versionen) und das Theme-Snippet im `<head>` (muss inline bleiben, verhindert Aufblitzen des falschen Themes)
 - `public/style.css` – komplettes CSS; Stil angelehnt an cloudinit-nocloud-configurator, reines CSS ohne Framework, Light/Dark über `data-theme`
 - `public/app.js` – `api()` und der Alpine-Zustand `charts()`; wird ohne `defer` vor Alpine geladen, damit `charts()` existiert, wenn Alpine startet
-- `sources.json` – Liste der abzufragenden Charts (wird über die API gepflegt); Pfad über `SOURCES_FILE` änderbar, fehlt die Datei dort, wird die mitgelieferte `sources.json` als Startliste übernommen
+- `sources.json` – Liste der abzufragenden Charts (wird über die API gepflegt); Nutzerdaten, steht in `.gitignore` und ist weder im Docker-Image noch im Executable; Pfad über `--sources`/`SOURCES_FILE` änderbar; fehlt die Datei, startet die App mit `[]` und legt Datei samt Ordner an
 - `Dockerfile` – node:26-alpine, läuft als `node`, Daten in `/data/sources.json` (Volume)
 - `README.md` – Doku für Nutzer (Englisch)
-- `scripts/build-sea.mjs` – bündelt `server.js` mit esbuild zu `dist/server.mjs` (ESM, `require`-Shim im Banner), bettet `public/*` und `sources.json` als SEA-Assets ein, baut mit `node --build-sea`
+- `scripts/build-sea.mjs` – bündelt `server.js` mit esbuild zu `dist/server.mjs` (ESM, `require`-Shim im Banner), bettet `public/*` als SEA-Assets ein, baut mit `node --build-sea`
 - `.github/workflows/release.yml` – bei Tag `v*`: Version gegen `package.json` prüfen, bauen, Smoke-Test, Release mit `helm-versions-linux-x64.tar.gz` + `.sha256` (Name ohne Version, damit `releases/latest/download/…` funktioniert); manuell gestartet nur Build + Artifact
 - Im SEA-Modus (`isSea()`) liefert `server.js` das Frontend aus den Assets statt per `express.static`; Standard für die Chart-Liste ist dann `./sources.json` im Arbeitsverzeichnis
 

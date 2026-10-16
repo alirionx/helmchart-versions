@@ -25,8 +25,8 @@ await build({
   logLevel: 'warning',
 });
 
-// 2. Frontend and default chart list as embedded assets
-const assets = { 'sources.json': at('sources.json') };
+// 2. Frontend as embedded assets
+const assets = {};
 for (const file of await readdir(at('public'))) assets[`public/${file}`] = at('public', file);
 
 const config = at('dist/sea.json');

@@ -16,7 +16,8 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 
-# Temp file while saving sources.json
+# Chart list – user data, created as an empty list on first start
+sources.json
 sources.json.tmp
 
 # Single executable build output

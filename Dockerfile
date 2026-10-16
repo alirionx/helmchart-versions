@@ -9,7 +9,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 
-COPY server.js sources.json ./
+COPY server.js ./
 COPY public ./public
 
 # The chart list is written to /data, so it survives container restarts when /data is a volume

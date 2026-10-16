@@ -1,7 +1,12 @@
 {
   "name": "helm-versions",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "Shows the latest versions of Helm charts from HTTP and OCI sources",
+  "author": "Daniel Quilitzsch",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alirionx/helmchart-versions.git"
+  },
   "type": "module",
   "main": "server.js",
   "scripts": {

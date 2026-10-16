@@ -47,7 +47,7 @@ jobs:
           curl -sf http://localhost:3999/style.css > /dev/null
           curl -sf http://localhost:3999/app.js > /dev/null
           curl -sf http://localhost:3999/api/charts > /dev/null
-          test -f sources.json
+          test "$(tr -d '[:space:]' < sources.json)" = "[]"
           kill $pid
 
       - name: Package
