@@ -18,3 +18,6 @@ Thumbs.db
 
 # Temp file while saving sources.json
 sources.json.tmp
+
+# Single executable build output
+dist/

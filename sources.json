@@ -1,29 +1,16 @@
 [
   {
-    "id": "52add3ce-3a05-43b9-a3c3-4a609a6cbdef",
-    "name": "ingress-nginx",
-    "source": "https://kubernetes.github.io/ingress-nginx",
-    "chart": "ingress-nginx"
-  },
-  {
-    "id": "6ffb545e-9cae-4a23-a819-a72b6ba39b79",
+    "id": "022d4b1f-5c25-4a74-9c77-a71ff817e400",
     "name": "cert-manager",
     "source": "https://charts.jetstack.io",
-    "chart": "cert-manager"
+    "chart": "cert-manager",
+    "group": "basics"
   },
   {
-    "id": "dd04f0f3-c5a0-4ee6-8442-77edab80bfe6",
-    "name": "podinfo",
-    "source": "oci://ghcr.io/stefanprodan/charts/podinfo"
-  },
-  {
-    "id": "1a722e44-4fc7-4dcf-8e37-2f333cf17893",
-    "name": "bitnami nginx",
-    "source": "oci://registry-1.docker.io/bitnamicharts/nginx"
-  },
-  {
-    "id": "63de1d87-915b-42b6-b276-7b7c7d69c561",
-    "name": "envoyproxy",
-    "source": "oci://docker.io/envoyproxy/gateway-helm"
+    "id": "f4560e12-bce3-4929-8ebc-b82a1005ee1a",
+    "name": "cluster-api-operator",
+    "source": "https://kubernetes-sigs.github.io/cluster-api-operator",
+    "chart": "cluster-api-operator",
+    "group": "k8s-lifecycle"
   }
 ]

@@ -15,158 +15,16 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&display=swap">
+  <link rel="stylesheet" href="style.css">
+  <!-- app.js defines charts() and must load before Alpine starts -->
+  <script src="app.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
-  <style>
-    /* Colors taken from the cloudinit-nocloud-configurator theme */
-    :root, :root[data-theme='dark'] {
-      color-scheme: dark;
-      --bg: #0e0f12;
-      --surface: #16181c;
-      --surface-bright: #1d2025;
-      --surface-variant: #22252b;
-      --text: #e6e8eb;
-      --muted: rgb(230 232 235 / .72);
-      --border: rgb(255 255 255 / .14);
-      --hover: rgb(255 255 255 / .05);
-      --primary: #3ddbc0;
-      --on-primary: #04211c;
-      --secondary: #ff8f7a;
-      --error: #ff7b72;
-      --success: #3ddbc0;
-    }
-    :root[data-theme='light'] {
-      color-scheme: light;
-      --bg: #f5f6f8;
-      --surface: #ffffff;
-      --surface-bright: #ffffff;
-      --surface-variant: #eceff3;
-      --text: #1d2025;
-      --muted: rgb(29 32 37 / .7);
-      --border: rgb(0 0 0 / .14);
-      --hover: rgb(0 0 0 / .04);
-      --primary: #00796b;
-      --on-primary: #ffffff;
-      --secondary: #b5412c;
-      --error: #b3261e;
-      --success: #1b6e20;
-    }
-
-    * { box-sizing: border-box; }
-    html, body { margin: 0; background: var(--bg); color: var(--text); }
-    body { font: 400 .875rem/1.5 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif; }
-    [x-cloak] { display: none !important; }
-    .icon { width: 1.15em; height: 1.15em; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-    .spin { animation: spin 1s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* Layout: sidebar + page */
-    .layout { display: flex; min-height: 100vh; }
-    .sidebar { width: 248px; flex: none; display: flex; flex-direction: column; padding: 24px 12px 16px; position: sticky; top: 0; height: 100vh; }
-    .brand { display: flex; align-items: center; gap: 12px; padding: 0 8px 32px; color: inherit; text-decoration: none; }
-    .brand-title { font-weight: 800; font-size: 1.15rem; line-height: 1.1; }
-    .brand-subtitle { font-size: .75rem; opacity: .75; }
-    .nav-heading { font-size: .7rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 0 12px; margin: 0 0 4px; }
-    .nav-item { display: flex; align-items: center; gap: 16px; width: 100%; padding: 10px 12px; border: 0; border-radius: 8px; background: none; color: inherit; font: inherit; font-size: .95rem; text-align: left; cursor: pointer; }
-    .nav-item:hover { background: var(--hover); }
-    .nav-item.active { background: var(--surface-variant); }
-    .nav-item.active .icon { color: var(--primary); }
-    .sidebar-bottom { margin-top: auto; }
-    .page { flex: 1; min-width: 0; max-width: 1200px; padding: 40px 32px; }
-
-    /* Page header */
-    .page-head { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 24px; }
-    .page-title { font-size: 1.75rem; font-weight: 700; letter-spacing: -.01em; margin: 0; }
-    .page-subtitle { margin: 4px 0 0; color: var(--muted); }
-    .spacer { flex: 1; }
-
-    /* Buttons */
-    .btn { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 16px; border-radius: 999px; border: 0; background: none; color: inherit; font: inherit; font-weight: 500; cursor: pointer; white-space: nowrap; }
-    .btn:hover { background: var(--hover); }
-    .btn:disabled { opacity: .5; cursor: default; }
-    .btn-lg { height: 44px; padding: 0 20px; font-size: .95rem; }
-    .btn-primary { background: var(--primary); color: var(--on-primary); }
-    .btn-primary:hover { background: var(--primary); filter: brightness(1.08); }
-    .btn-outlined { border: 1px solid var(--border); }
-    .btn-error { color: var(--error); }
-    .icon-btn { display: inline-grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; border: 0; background: none; color: inherit; cursor: pointer; }
-    .icon-btn:hover { background: var(--surface-variant); }
-    .icon-btn:disabled { opacity: .5; cursor: default; }
-    .icon-btn.primary { color: var(--primary); }
-    .icon-btn.secondary { color: var(--secondary); }
-
-    /* Inputs (outlined, compact) */
-    .field { display: block; margin-bottom: 16px; }
-    .field-label { display: block; font-size: .8rem; color: var(--muted); margin-bottom: 4px; }
-    .input-wrap { position: relative; display: flex; align-items: center; }
-    .input-wrap .icon { position: absolute; left: 12px; color: var(--muted); pointer-events: none; }
-    input[type=text] { width: 100%; height: 40px; padding: 0 12px; border: 1px solid var(--border); border-radius: 8px; background: transparent; color: inherit; font: inherit; font-size: .95rem; }
-    .input-wrap .icon + input { padding-left: 38px; }
-    input[type=text]:hover { border-color: var(--muted); }
-    input[type=text]:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); }
-    .field.invalid input { border-color: var(--error); }
-    select { height: 36px; padding: 0 8px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-bright); color: inherit; font: inherit; }
-    select:focus { outline: none; border-color: var(--primary); }
-    .check { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
-    .check input { accent-color: var(--primary); width: 16px; height: 16px; margin: 0; }
-    .field-hint, .field-error { display: block; font-size: .75rem; margin-top: 4px; color: var(--muted); }
-    .field-error { color: var(--error); }
-    .search { width: 22rem; max-width: 100%; }
-
-    /* Card + table */
-    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
-    .table-wrap { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; }
-    th { font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); text-align: left; padding: 0 16px; height: 48px; white-space: nowrap; }
-    td { padding: 10px 16px; height: 56px; border-top: 1px solid var(--border); vertical-align: middle; }
-    tbody tr:hover { background: var(--hover); }
-    .name { font-weight: 600; color: var(--primary); }
-    .src { color: var(--muted); font-size: .8rem; word-break: break-all; }
-    .version { font-weight: 600; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
-    .dim { color: var(--muted); }
-    .err { color: var(--error); }
-    .nowrap { white-space: nowrap; }
-    .actions { display: flex; justify-content: flex-end; gap: 2px; }
-    .chip { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: .72rem; font-weight: 600; letter-spacing: .04em; background: var(--surface-variant); }
-    .chip.oci { color: var(--primary); }
-    .chip.http { color: var(--secondary); }
-    .chip.latest { color: var(--on-primary); background: var(--primary); }
-    .chip.pre { color: var(--muted); }
-    .empty { padding: 32px 16px; text-align: center; color: var(--muted); }
-
-    /* Alert, dialog, toast */
-    .alert { padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; color: var(--error); background: color-mix(in srgb, var(--error) 14%, transparent); }
-    dialog { width: min(460px, calc(100vw - 32px)); padding: 0; border: 0; border-radius: 8px; background: var(--surface-bright); color: var(--text); box-shadow: 0 12px 40px rgb(0 0 0 / .4); }
-    dialog::backdrop { background: rgb(0 0 0 / .55); }
-    .dialog-title { font-size: 1.25rem; font-weight: 600; padding: 20px 24px 12px; margin: 0; }
-    .dialog-body { padding: 4px 24px 8px; }
-    dialog.wide { width: min(640px, calc(100vw - 32px)); }
-    .dialog-sub { margin: -8px 24px 12px; color: var(--muted); font-size: .8rem; word-break: break-all; }
-    .toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 12px; }
-    .versions { max-height: 55vh; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; }
-    .versions th { position: sticky; top: 0; background: var(--surface-bright); }
-    .versions td { height: 44px; padding: 6px 16px; }
-    .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; padding: 8px 16px 16px; }
-    .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); padding: 12px 20px; border-radius: 8px; background: var(--surface-variant); box-shadow: 0 6px 24px rgb(0 0 0 / .3); z-index: 10; }
-    .toast.error { background: var(--error); color: #fff; }
-    .toast.success { background: var(--primary); color: var(--on-primary); }
-
-    /* Narrow screens: sidebar becomes a top bar */
-    @media (max-width: 800px) {
-      .layout { flex-direction: column; }
-      .sidebar { width: auto; height: auto; position: static; flex-direction: row; align-items: center; padding: 12px 16px; gap: 8px; }
-      .brand { padding: 0; }
-      .sidebar nav, .nav-heading { display: none; }
-      .sidebar-bottom { margin-top: 0; margin-left: auto; }
-      .nav-label { display: none; }
-      .page { padding: 16px; }
-      .search { width: 100%; }
-    }
-  </style>
 </head>
 <body>
   <!-- Icons (Lucide, ISC license) -->
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
     <symbol id="i-list" viewBox="0 0 24 24"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/><path d="M14 4h7M14 9h7M14 15h7M14 20h7"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></symbol>
     <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></symbol>
     <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></symbol>
     <symbol id="i-history" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></symbol>
@@ -195,10 +53,26 @@
         </div>
       </a>
 
-      <nav>
+      <nav aria-label="Groups">
         <p class="nav-heading">Charts</p>
-        <a class="nav-item active" href="/"><svg class="icon"><use href="#i-list"/></svg>All charts</a>
-        <button class="nav-item" type="button" @click="openForm()"><svg class="icon"><use href="#i-plus"/></svg>Add chart</button>
+        <button class="nav-item" type="button" :class="{ active: activeGroup === null }" :aria-current="activeGroup === null"
+                @click="activeGroup = null">
+          <svg class="icon"><use href="#i-list"/></svg><span class="nav-text">All charts</span>
+          <span class="count" x-text="items.length"></span>
+        </button>
+        <p class="nav-heading groups-heading" x-show="groups.length">Groups</p>
+        <template x-for="g in groups" :key="g.name">
+          <button class="nav-item" type="button" :class="{ active: activeGroup === g.name }" :aria-current="activeGroup === g.name"
+                  @click="activeGroup = g.name" :title="g.name">
+            <svg class="icon"><use href="#i-folder"/></svg><span class="nav-text" x-text="g.name"></span>
+            <span class="count" x-text="g.count"></span>
+          </button>
+        </template>
+        <button class="nav-item dim" type="button" x-show="groups.length && ungroupedCount" :class="{ active: activeGroup === '' }"
+                :aria-current="activeGroup === ''" @click="activeGroup = ''">
+          <svg class="icon"><use href="#i-folder"/></svg><span class="nav-text">Ungrouped</span>
+          <span class="count" x-text="ungroupedCount"></span>
+        </button>
       </nav>
 
       <div class="sidebar-bottom">
@@ -213,16 +87,16 @@
     <main class="page">
       <div class="page-head">
         <div>
-          <h1 class="page-title">Charts</h1>
+          <h1 class="page-title" x-text="title"></h1>
           <p class="page-subtitle">
-            <span x-text="items.length + (items.length === 1 ? ' chart' : ' charts')"></span>
+            <span x-text="inGroup.length + (inGroup.length === 1 ? ' chart' : ' charts')"></span>
             <span x-show="checkedAt" x-text="' · checked ' + formatDate(checkedAt)"></span>
           </p>
         </div>
         <div class="spacer"></div>
         <label class="input-wrap search">
           <svg class="icon"><use href="#i-search"/></svg>
-          <input type="text" x-model="search" placeholder="Search name or source" aria-label="Search name or source">
+          <input type="text" x-model="search" placeholder="Search name, source or group" aria-label="Search name, source or group">
         </label>
         <button class="btn btn-outlined btn-lg" type="button" @click="load(true)" :disabled="loading">
           <svg class="icon" :class="{ spin: loading }"><use href="#i-refresh"/></svg>
@@ -245,7 +119,10 @@
               <template x-for="c in filtered" :key="c.id">
                 <tr>
                   <td>
-                    <div class="name" x-text="c.name"></div>
+                    <div>
+                      <span class="name" x-text="c.name"></span>
+                      <span class="chip group" x-show="c.group && activeGroup === null" x-text="c.group"></span>
+                    </div>
                     <div class="src" x-text="c.source + (c.chart ? ' · ' + c.chart : '')"></div>
                   </td>
                   <td><span class="chip" :class="c.type" x-text="c.type.toUpperCase()"></span></td>
@@ -279,7 +156,7 @@
           </table>
         </div>
         <p class="empty" x-show="!loading && !filtered.length" x-cloak
-           x-text="items.length ? 'No charts match your search.' : 'No charts yet. Add your first one.'"></p>
+           x-text="inGroup.length ? 'No charts match your search.' : 'No charts yet. Add your first one.'"></p>
         <p class="empty" x-show="loading && !items.length" x-cloak>Checking charts…</p>
       </div>
     </main>
@@ -305,6 +182,15 @@
             <span class="field-label">Chart</span>
             <input type="text" x-model="form.chart" placeholder="e.g. cert-manager">
             <span class="field-error" x-show="form.errors.chart" x-text="form.errors.chart"></span>
+          </label>
+          <label class="field" :class="{ invalid: form.errors.group }">
+            <span class="field-label">Group (optional)</span>
+            <input type="text" x-model="form.group" list="group-list" placeholder="e.g. Ingress" maxlength="40">
+            <datalist id="group-list">
+              <template x-for="g in groups" :key="g.name"><option :value="g.name"></option></template>
+            </datalist>
+            <span class="field-error" x-show="form.errors.group" x-text="form.errors.group"></span>
+            <span class="field-hint" x-show="!form.errors.group">Pick an existing group or type a new one.</span>
           </label>
           <p class="alert" x-show="form.errors._" x-text="form.errors._"></p>
         </div>
@@ -374,156 +260,5 @@
 
     <div class="toast" x-show="toast" x-cloak x-transition.opacity :class="toast ? toast.kind : ''" x-text="toast?.text" role="status"></div>
   </div>
-
-  <script>
-    async function api(method, url, body) {
-      const res = await fetch(url, {
-        method,
-        headers: body ? { 'Content-Type': 'application/json' } : {},
-        body: body ? JSON.stringify(body) : undefined,
-      });
-      const data = res.status === 204 ? null : await res.json().catch(() => null);
-      if (!res.ok) {
-        const err = new Error(data?.error || res.statusText);
-        err.fields = data?.fields;
-        throw err;
-      }
-      return data;
-    }
-
-    function charts() {
-      return {
-        items: [], checkedAt: null, loading: false, error: null,
-        search: '', busy: {}, deleting: null, toast: null, toastTimer: null,
-        dark: document.documentElement.dataset.theme !== 'light',
-        hist: { chart: null, limit: 10, prereleases: false, versions: [], total: 0, latest: null, loading: false, error: null },
-        form: { open: false, id: null, name: '', source: '', chart: '', errors: {}, saving: false },
-
-        get filtered() {
-          const q = this.search.trim().toLowerCase();
-          if (!q) return this.items;
-          return this.items.filter((c) => [c.name, c.source, c.chart ?? ''].some((t) => t.toLowerCase().includes(q)));
-        },
-        get isOci() {
-          return this.form.source.trim().startsWith('oci://');
-        },
-
-        async load(refresh = false) {
-          this.loading = true; this.error = null;
-          try {
-            const body = await api('GET', '/api/charts' + (refresh ? '?refresh=1' : ''));
-            this.items = body.charts;
-            this.checkedAt = body.checkedAt;
-          } catch (e) {
-            this.error = 'Could not load charts: ' + e.message;
-          } finally {
-            this.loading = false;
-          }
-        },
-
-        upsert(entry) {
-          const i = this.items.findIndex((c) => c.id === entry.id);
-          if (i === -1) this.items.push(entry); else this.items[i] = entry;
-        },
-
-        async refreshOne(c) {
-          this.busy[c.id] = true;
-          try {
-            this.upsert(await api('POST', `/api/charts/${c.id}/refresh`));
-          } catch (e) {
-            this.notify(`Refreshing "${c.name}" failed: ${e.message}`, 'error');
-          } finally {
-            this.busy[c.id] = false;
-          }
-        },
-
-        openVersions(c) {
-          Object.assign(this.hist, { chart: c, versions: [], total: 0, latest: c.version, error: null });
-          this.$refs.versionsDialog.showModal();
-          this.loadVersions();
-        },
-
-        async loadVersions(refresh = false) {
-          const h = this.hist;
-          const id = h.chart.id;
-          h.loading = true; h.error = null;
-          try {
-            const q = new URLSearchParams({ limit: h.limit, prereleases: h.prereleases ? '1' : '0', refresh: refresh ? '1' : '0' });
-            const body = await api('GET', `/api/charts/${id}/versions?${q}`);
-            if (h.chart?.id !== id) return; // dialog was reopened for another chart
-            const { versions, total, ...entry } = body;
-            Object.assign(h, { versions, total, latest: entry.version });
-            this.upsert(entry);
-          } catch (e) {
-            h.versions = []; h.total = 0;
-            h.error = e.message;
-          } finally {
-            h.loading = false;
-          }
-        },
-
-        openForm(c = null) {
-          this.form = {
-            open: true, id: c?.id ?? null, name: c?.name ?? '', source: c?.source ?? '', chart: c?.chart ?? '',
-            errors: {}, saving: false,
-          };
-          this.$refs.formDialog.showModal();
-        },
-
-        async save() {
-          const f = this.form;
-          f.saving = true; f.errors = {};
-          const body = { name: f.name, source: f.source, chart: this.isOci ? undefined : f.chart };
-          try {
-            const entry = f.id
-              ? await api('PUT', `/api/charts/${f.id}`, body)
-              : await api('POST', '/api/charts', body);
-            this.upsert(entry);
-            this.$refs.formDialog.close();
-            this.notify(`${f.id ? 'Saved' : 'Added'} "${entry.name}".`, 'success');
-          } catch (e) {
-            f.errors = e.fields ?? { _: e.message };
-          } finally {
-            f.saving = false;
-          }
-        },
-
-        askDelete(c) {
-          this.deleting = c;
-          this.$refs.deleteDialog.showModal();
-        },
-
-        async confirmDelete() {
-          const c = this.deleting;
-          this.$refs.deleteDialog.close();
-          try {
-            await api('DELETE', `/api/charts/${c.id}`);
-            this.items = this.items.filter((x) => x.id !== c.id);
-            this.notify(`Deleted "${c.name}".`, 'success');
-          } catch (e) {
-            this.notify(`Deleting failed: ${e.message}`, 'error');
-          }
-        },
-
-        notify(text, kind) {
-          clearTimeout(this.toastTimer);
-          this.toast = { text, kind };
-          this.toastTimer = setTimeout(() => (this.toast = null), 3000);
-        },
-
-        toggleTheme() {
-          this.dark = !this.dark;
-          const theme = this.dark ? 'dark' : 'light';
-          document.documentElement.dataset.theme = theme;
-          try { localStorage.setItem('hv-theme', theme); } catch (e) { /* storage unavailable */ }
-        },
-
-        formatDate(iso, withTime = true) {
-          const opts = withTime ? { dateStyle: 'medium', timeStyle: 'short' } : { dateStyle: 'medium' };
-          return new Intl.DateTimeFormat('en-US', opts).format(new Date(iso));
-        },
-      };
-    }
-  </script>
 </body>
 </html>

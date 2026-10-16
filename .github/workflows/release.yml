@@ -1,0 +1,72 @@
+# Builds the single executable for Linux x64.
+# Tag push (v1.2.3): build, test and publish a GitHub release.
+# Manual run: build and test only, the file is attached to the workflow run.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  linux-x64:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 26
+          cache: npm
+
+      - name: Tag matches package.json version
+        if: github.ref_type == 'tag'
+        run: |
+          version="v$(node -p "require('./package.json').version")"
+          if [ "$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match package.json version $version"
+            exit 1
+          fi
+
+      - run: npm ci
+
+      - run: npm run build:sea
+
+      - name: Smoke test
+        run: |
+          bin="$GITHUB_WORKSPACE/dist/helm-versions"
+          "$bin" --version
+          cd "$RUNNER_TEMP"
+          "$bin" --port 3999 &
+          pid=$!
+          for i in $(seq 1 30); do curl -sf http://localhost:3999/ > /dev/null && break; sleep 1; done
+          curl -sf http://localhost:3999/ | grep -q 'Helm Chart Versions'
+          curl -sf http://localhost:3999/style.css > /dev/null
+          curl -sf http://localhost:3999/app.js > /dev/null
+          curl -sf http://localhost:3999/api/charts > /dev/null
+          test -f sources.json
+          kill $pid
+
+      - name: Package
+        run: |
+          # No version in the name, so .../releases/latest/download/<name> always works
+          name="helm-versions-linux-x64"
+          tar -czf "$name.tar.gz" -C dist helm-versions
+          sha256sum "$name.tar.gz" > "$name.tar.gz.sha256"
+          echo "ASSET=$name" >> "$GITHUB_ENV"
+
+      - name: Upload as workflow artifact
+        if: github.ref_type != 'tag'
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ env.ASSET }}
+          path: ${{ env.ASSET }}.tar.gz*
+
+      - name: Publish release
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" "$ASSET.tar.gz" "$ASSET.tar.gz.sha256" --title "$GITHUB_REF_NAME" --generate-notes

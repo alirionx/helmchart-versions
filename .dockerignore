@@ -11,3 +11,5 @@ Dockerfile
 .dockerignore
 README.md
 CLAUDE.md
+dist
+scripts

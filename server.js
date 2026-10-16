@@ -5,13 +5,56 @@ import { randomUUID } from 'crypto';
 import { readFile, writeFile, rename } from 'fs/promises';
 import { fileURLToPath } from 'url';
 import { resolve } from 'path';
+import { parseArgs } from 'util';
+import { isSea, getAsset, getAssetKeys } from 'node:sea';
+import pkg from './package.json' with { type: 'json' };
 
-const PORT = process.env.PORT || 3000;
+const HELP = `helm-versions ${pkg.version}
+${pkg.description}
+
+Usage: helm-versions [options]
+
+Options:
+  -p, --port <port>     HTTP port (env PORT, default 3000)
+  -s, --sources <file>  chart list to read and save (env SOURCES_FILE)
+                        default: ./sources.json in the current directory
+                        (when run from the repo: the repo's sources.json)
+  -h, --help            show this help
+  -v, --version         show the version
+`;
+
+let args;
+try {
+  args = parseArgs({
+    options: {
+      port: { type: 'string', short: 'p' },
+      sources: { type: 'string', short: 's' },
+      help: { type: 'boolean', short: 'h' },
+      version: { type: 'boolean', short: 'v' },
+    },
+  }).values;
+} catch (err) {
+  console.error(`${err.message}\n\n${HELP}`);
+  process.exit(1);
+}
+if (args.help) {
+  console.log(HELP);
+  process.exit(0);
+}
+if (args.version) {
+  console.log(pkg.version);
+  process.exit(0);
+}
+
+// As a single executable (Node SEA) the frontend and the default chart list are embedded assets
+const SEA = isSea();
+
+const PORT = args.port || process.env.PORT || 3000;
 const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 const TIMEOUT_MS = 15_000;
-const BUNDLED_SOURCES = fileURLToPath(new URL('./sources.json', import.meta.url));
-// SOURCES_FILE lets the list live outside the app directory (e.g. a Docker volume)
-const SOURCES_FILE = process.env.SOURCES_FILE ? resolve(process.env.SOURCES_FILE) : BUNDLED_SOURCES;
+const BUNDLED_SOURCES = SEA ? null : fileURLToPath(new URL('./sources.json', import.meta.url));
+// The list can live outside the app directory (e.g. a Docker volume); the executable defaults to the current directory
+const SOURCES_FILE = resolve(args.sources || process.env.SOURCES_FILE || BUNDLED_SOURCES || 'sources.json');
 
 // ---------- Helpers ----------
 
@@ -118,7 +161,7 @@ try {
 } catch (err) {
   // A configured file that does not exist yet starts with the bundled list
   if (err.code !== 'ENOENT' || SOURCES_FILE === BUNDLED_SOURCES) throw err;
-  sources = JSON.parse(await readFile(BUNDLED_SOURCES, 'utf-8'));
+  sources = JSON.parse(SEA ? getAsset('sources.json', 'utf-8') : await readFile(BUNDLED_SOURCES, 'utf-8'));
   seeded = true;
 }
 let writing = Promise.resolve();
@@ -146,6 +189,7 @@ function validate(body) {
   const name = String(body?.name ?? '').trim();
   const source = String(body?.source ?? '').trim();
   const chart = String(body?.chart ?? '').trim();
+  const group = String(body?.group ?? '').trim();
   const fields = {};
 
   if (!name) fields.name = 'Name is required';
@@ -155,8 +199,12 @@ function validate(body) {
     fields.source = 'OCI source needs a repository path, e.g. oci://ghcr.io/org/charts/name';
   }
   if (typeOf(source) === 'http' && !chart) fields.chart = 'Chart name is required for HTTP repos';
+  if (group.length > 40) fields.group = 'Group must be 40 characters or less';
 
-  const value = typeOf(source) === 'oci' ? { name, source } : { name, source, chart };
+  // Optional fields are only stored when set
+  const value = { name, source };
+  if (typeOf(source) === 'http') value.chart = chart;
+  if (group) value.group = group;
   return { fields, value };
 }
 
@@ -213,6 +261,7 @@ function toEntry(src, result) {
     type: typeOf(src.source),
     source: src.source,
     chart: src.chart ?? null,
+    group: src.group ?? null,
     ...rest,
     checkedAt: new Date(time).toISOString(),
   };
@@ -224,7 +273,16 @@ const entry = async (src, force) => toEntry(src, await refresh(src, force));
 
 const app = express();
 app.use(express.json());
-app.use(express.static(fileURLToPath(new URL('./public', import.meta.url))));
+if (SEA) {
+  const assets = new Set(getAssetKeys());
+  app.use((req, res, next) => {
+    const key = 'public' + (req.path === '/' ? '/index.html' : req.path);
+    if (req.method !== 'GET' || !assets.has(key)) return next();
+    res.type(key.slice(key.lastIndexOf('.'))).send(Buffer.from(getAsset(key)));
+  });
+} else {
+  app.use(express.static(fileURLToPath(new URL('./public', import.meta.url))));
+}
 
 function findSource(req, res) {
   const src = sources.find((s) => s.id === req.params.id);

@@ -6,7 +6,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node --watch server.js"
+    "dev": "node --watch server.js",
+    "build:sea": "node scripts/build-sea.mjs"
   },
   "engines": {
     "node": ">=24"
@@ -15,5 +16,8 @@
     "express": "^4.21.0",
     "js-yaml": "^4.1.0",
     "semver": "^7.6.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
   }
 }
