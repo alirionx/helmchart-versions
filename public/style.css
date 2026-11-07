@@ -102,6 +102,12 @@ select:focus { outline: none; border-color: var(--primary); }
 .table-wrap { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; }
 th { font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); text-align: left; padding: 0 16px; height: 48px; white-space: nowrap; }
+.sort-btn { display: inline-flex; align-items: center; gap: 4px; padding: 0; border: 0; background: none; color: inherit; font: inherit; letter-spacing: inherit; text-transform: inherit; cursor: pointer; }
+.sort-btn:hover, .sort-btn.active { color: var(--text); }
+.sort-icon { width: 1.1em; height: 1.1em; opacity: 0; transition: transform .15s; }
+.sort-btn:hover .sort-icon { opacity: .5; }
+.sort-btn.active .sort-icon { opacity: 1; color: var(--primary); }
+.sort-icon.desc { transform: rotate(180deg); }
 td { padding: 10px 16px; height: 56px; border-top: 1px solid var(--border); vertical-align: middle; }
 tbody tr:hover { background: var(--hover); }
 .name { font-weight: 600; color: var(--primary); }

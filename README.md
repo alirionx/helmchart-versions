@@ -3,6 +3,7 @@
 A small web app that shows the latest version of your Helm charts in one table, from classic HTTP chart repos and OCI registries.
 
 - One table with the latest version, app version, publish date and when it was last checked
+- Sort the table by any column (versions are compared as version numbers, empty values go last)
 - Add, edit and delete charts in the browser
 - Optional groups (e.g. per team or cluster) to filter the table from the sidebar
 - Refresh a single chart or all of them

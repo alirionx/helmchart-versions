@@ -13,12 +13,48 @@ async function api(method, url, body) {
   return data;
 }
 
+// Compare two version strings roughly like semver: numeric parts first, a pre-release sorts before its release
+function compareVersions(a, b) {
+  const parse = (v) => {
+    const [core, ...pre] = v.replace(/^v/i, '').split('+')[0].split('-');
+    return { nums: core.split('.').map((n) => parseInt(n, 10) || 0), pre: pre.join('-') };
+  };
+  const x = parse(a), y = parse(b);
+  for (let i = 0; i < Math.max(x.nums.length, y.nums.length); i++) {
+    const d = (x.nums[i] ?? 0) - (y.nums[i] ?? 0);
+    if (d) return d;
+  }
+  if (x.pre === y.pre) return 0;
+  if (!x.pre) return 1;
+  if (!y.pre) return -1;
+  return x.pre.localeCompare(y.pre, 'en', { numeric: true });
+}
+
+const SORT_COLUMNS = [
+  { key: 'name', label: 'Chart' },
+  { key: 'type', label: 'Type' },
+  { key: 'version', label: 'Version' },
+  { key: 'appVersion', label: 'App version' },
+  { key: 'created', label: 'Published' },
+  { key: 'checkedAt', label: 'Checked' },
+];
+
+function loadSort() {
+  try {
+    const s = JSON.parse(localStorage.getItem('hv-sort'));
+    if (SORT_COLUMNS.some((c) => c.key === s?.key) && ['asc', 'desc'].includes(s.dir)) return s;
+  } catch (e) { /* storage unavailable or invalid */ }
+  return { key: 'name', dir: 'asc' };
+}
+
 function charts() {
   return {
     items: [], checkedAt: null, loading: false, error: null,
     search: '', busy: {}, deleting: null, toast: null, toastTimer: null,
     activeGroup: null, // null = all charts, '' = ungrouped, otherwise a group name
     dark: document.documentElement.dataset.theme !== 'light',
+    columns: SORT_COLUMNS,
+    sort: loadSort(),
     hist: { chart: null, limit: 10, prereleases: false, versions: [], total: 0, latest: null, loading: false, error: null },
     form: { open: false, id: null, name: '', source: '', chart: '', group: '', errors: {}, saving: false },
 
@@ -39,9 +75,9 @@ function charts() {
     },
     get filtered() {
       const q = this.search.trim().toLowerCase();
-      if (!q) return this.inGroup;
-      return this.inGroup.filter((c) =>
+      const list = !q ? this.inGroup : this.inGroup.filter((c) =>
         [c.name, c.source, c.chart ?? '', c.group ?? ''].some((t) => t.toLowerCase().includes(q)));
+      return this.sorted(list);
     },
     get title() {
       if (this.activeGroup === null) return 'Charts';
@@ -49,6 +85,37 @@ function charts() {
     },
     get isOci() {
       return this.form.source.trim().startsWith('oci://');
+    },
+
+    // Empty values always go last, ties are broken by name
+    sorted(list) {
+      const { key, dir } = this.sort;
+      const sign = dir === 'asc' ? 1 : -1;
+      const byName = (a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base', numeric: true });
+      const cmp = {
+        version: compareVersions,
+        appVersion: compareVersions,
+        created: (a, b) => Date.parse(a) - Date.parse(b),
+        checkedAt: (a, b) => Date.parse(a) - Date.parse(b),
+      }[key] ?? ((a, b) => a.localeCompare(b, 'en', { sensitivity: 'base', numeric: true }));
+      return [...list].sort((a, b) => {
+        const x = a[key], y = b[key];
+        if (!x || !y) return (!x - !y) || byName(a, b);
+        return sign * cmp(x, y) || byName(a, b);
+      });
+    },
+
+    sortBy(key) {
+      this.sort = this.sort.key === key
+        ? { key, dir: this.sort.dir === 'asc' ? 'desc' : 'asc' }
+        // Dates start with the newest first, everything else ascending
+        : { key, dir: ['created', 'checkedAt'].includes(key) ? 'desc' : 'asc' };
+      try { localStorage.setItem('hv-sort', JSON.stringify(this.sort)); } catch (e) { /* storage unavailable */ }
+    },
+
+    ariaSort(key) {
+      if (this.sort.key !== key) return 'none';
+      return this.sort.dir === 'asc' ? 'ascending' : 'descending';
     },
 
     async load(refresh = false) {
