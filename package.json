@@ -1,6 +1,6 @@
 {
   "name": "helm-versions",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Shows the latest versions of Helm charts from HTTP and OCI sources",
   "author": "Daniel Quilitzsch",
   "repository": {
